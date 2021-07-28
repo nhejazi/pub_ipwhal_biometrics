@@ -1,0 +1,104 @@
+[0;34mr$>[0m ipw_nhefs_baltab <- ipw_nhefs_balance$Balance %>%
+...   select(-Diff.Un) %>%
+...   kable(col.names = c("Covariate Type", "GLM (unadjust ..." ... [TRUNCATED] 
+\begin{table}
+\centering
+\begin{tabular}{llrrrrr}
+\toprule
+  & Covariate Type & GLM (unadjusted) & GLM (main terms) & GLM (w/ quad. terms) & HAL (global CV) & HAL (undersm., min. trunc.)\\
+\midrule
+sex & Binary & -0.0799 & -0.0080 & -0.0014 & -0.0330 & -0.0301\\
+race & Binary & -0.0568 & -0.0003 & 0.0023 & -0.0438 & -0.0404\\
+age & Contin. & 0.2820 & 0.0312 & 0.0058 & 0.1511 & 0.1473\\
+education & Contin. & 0.0879 & 0.0246 & 0.0221 & 0.0746 & 0.0708\\
+smokeintensity & Contin. & -0.2167 & 0.0076 & -0.0241 & -0.1071 & -0.1015\\
+\addlinespace
+smokeyrs & Contin. & 0.1589 & 0.0254 & -0.0035 & 0.0559 & 0.0543\\
+exercise & Contin. & 0.1036 & -0.0015 & -0.0123 & 0.0676 & 0.0636\\
+active & Contin. & 0.0887 & 0.0070 & 0.0059 & 0.0613 & 0.0593\\
+wt71 & Contin. & 0.1332 & -0.0105 & -0.0090 & 0.0347 & 0.0282\\
+age² & Contin. & 0.2816 & 0.0279 & 0.0062 & 0.1484 & 0.1447\\
+\addlinespace
+education² & Contin. & 0.1221 & 0.0225 & 0.0178 & 0.0891 & 0.0838\\
+smokeintensity² & Contin. & -0.1289 & 0.0871 & -0.0271 & -0.0803 & -0.0767\\
+smokeyrs² & Contin. & 0.1789 & 0.0417 & -0.0005 & 0.0662 & 0.0637\\
+exercise² & Contin. & 0.0793 & -0.0115 & -0.0219 & 0.0438 & 0.0405\\
+active² & Contin. & 0.0889 & -0.0069 & -0.0055 & 0.0527 & 0.0493\\
+\addlinespace
+wt71² & Contin. & 0.1272 & -0.0011 & -0.0083 & 0.0342 & 0.0273\\
+age³ & Contin. & 0.2760 & 0.0243 & 0.0066 & 0.1426 & 0.1390\\
+education³ & Contin. & 0.1418 & 0.0201 & 0.0138 & 0.0961 & 0.0900\\
+smokeintensity³ & Contin. & -0.0634 & 0.1410 & -0.0292 & -0.0516 & -0.0499\\
+smokeyrs³ & Contin. & 0.1841 & 0.0551 & 0.0050 & 0.0691 & 0.0658\\
+\addlinespace
+exercise³ & Contin. & 0.0675 & -0.0153 & -0.0252 & 0.0331 & 0.0301\\
+active³ & Contin. & 0.0831 & -0.0143 & -0.0116 & 0.0444 & 0.0403\\
+wt71³ & Contin. & 0.1169 & 0.0063 & -0.0088 & 0.0306 & 0.0233\\
+sex\_0 * race\_0 & Binary & 0.1005 & 0.0175 & 0.0111 & 0.0520 & 0.0476\\
+sex\_0 * race\_1 & Binary & -0.0206 & -0.0094 & -0.0096 & -0.0190 & -0.0176\\
+\addlinespace
+sex\_0 * age & Contin. & 0.2230 & 0.0410 & 0.0120 & 0.0941 & 0.0862\\
+sex\_0 * education & Contin. & 0.1719 & 0.0121 & 0.0029 & 0.0816 & 0.0743\\
+sex\_0 * smokeintensity & Contin. & 0.0746 & 0.0871 & 0.0297 & 0.0256 & 0.0215\\
+sex\_0 * smokeyrs & Contin. & 0.2190 & 0.0562 & 0.0164 & 0.0856 & 0.0778\\
+sex\_0 * exercise & Contin. & 0.2079 & 0.0390 & 0.0117 & 0.1002 & 0.0929\\
+\addlinespace
+sex\_0 * active & Contin. & 0.1853 & 0.0426 & 0.0343 & 0.0999 & 0.0948\\
+sex\_0 * wt71 & Contin. & 0.1650 & 0.0058 & -0.0010 & 0.0654 & 0.0585\\
+sex\_1 * race\_0 & Binary & -0.0436 & -0.0172 & -0.0133 & -0.0082 & -0.0072\\
+sex\_1 * race\_1 & Binary & -0.0363 & 0.0091 & 0.0119 & -0.0248 & -0.0229\\
+sex\_1 * age & Contin. & -0.0849 & -0.0262 & -0.0094 & -0.0193 & -0.0132\\
+\addlinespace
+sex\_1 * education & Contin. & -0.1117 & 0.0063 & 0.0140 & -0.0277 & -0.0230\\
+sex\_1 * smokeintensity & Contin. & -0.3307 & -0.1056 & -0.0648 & -0.1487 & -0.1373\\
+sex\_1 * smokeyrs & Contin. & -0.1221 & -0.0452 & -0.0230 & -0.0532 & -0.0453\\
+sex\_1 * exercise & Contin. & -0.1031 & -0.0379 & -0.0220 & -0.0340 & -0.0307\\
+sex\_1 * active & Contin. & -0.0795 & -0.0336 & -0.0267 & -0.0275 & -0.0249\\
+\addlinespace
+sex\_1 * wt71 & Contin. & -0.1334 & -0.0116 & -0.0030 & -0.0611 & -0.0559\\
+race\_0 * age & Contin. & 0.3064 & 0.0259 & 0.0048 & 0.1965 & 0.1858\\
+race\_0 * education & Contin. & 0.1765 & 0.0288 & 0.0217 & 0.1402 & 0.1318\\
+race\_0 * smokeintensity & Contin. & -0.0973 & 0.0334 & -0.0118 & -0.0339 & -0.0330\\
+race\_0 * smokeyrs & Contin. & 0.2269 & 0.0313 & 0.0029 & 0.1239 & 0.1163\\
+\addlinespace
+race\_0 * exercise & Contin. & 0.2057 & 0.0138 & 0.0002 & 0.1505 & 0.1407\\
+race\_0 * active & Contin. & 0.1497 & 0.0148 & 0.0138 & 0.1177 & 0.1129\\
+race\_0 * wt71 & Contin. & 0.2312 & -0.0012 & -0.0057 & 0.1436 & 0.1300\\
+race\_1 * age & Contin. & -0.1466 & -0.0064 & -0.0011 & -0.1181 & -0.1081\\
+race\_1 * education & Contin. & -0.1864 & -0.0149 & -0.0056 & -0.1409 & -0.1314\\
+\addlinespace
+race\_1 * smokeintensity & Contin. & -0.2540 & -0.0681 & -0.0257 & -0.1623 & -0.1514\\
+race\_1 * smokeyrs & Contin. & -0.1380 & -0.0144 & -0.0093 & -0.1176 & -0.1079\\
+race\_1 * exercise & Contin. & -0.1633 & -0.0227 & -0.0174 & -0.1309 & -0.1219\\
+race\_1 * active & Contin. & -0.1385 & -0.0178 & -0.0179 & -0.1281 & -0.1218\\
+race\_1 * wt71 & Contin. & -0.1684 & -0.0053 & 0.0006 & -0.1347 & -0.1240\\
+\addlinespace
+age * education & Contin. & 0.1944 & 0.0036 & -0.0154 & 0.1123 & 0.1077\\
+age * smokeintensity & Contin. & -0.0692 & 0.0525 & -0.0002 & -0.0177 & -0.0136\\
+age * smokeyrs & Contin. & 0.2050 & 0.0322 & 0.0009 & 0.0863 & 0.0839\\
+age * exercise & Contin. & 0.1989 & 0.0146 & -0.0017 & 0.1100 & 0.1043\\
+age * active & Contin. & 0.1453 & 0.0012 & -0.0058 & 0.0791 & 0.0764\\
+\addlinespace
+age * wt71 & Contin. & 0.3033 & 0.0194 & 0.0019 & 0.1335 & 0.1260\\
+education * smokeintensity & Contin. & -0.1075 & 0.0222 & -0.0124 & -0.0483 & -0.0470\\
+education * smokeyrs & Contin. & 0.1484 & -0.0043 & -0.0284 & 0.0565 & 0.0535\\
+education * exercise & Contin. & 0.0931 & -0.0264 & -0.0423 & 0.0585 & 0.0516\\
+education * active & Contin. & 0.0683 & -0.0240 & -0.0206 & 0.0449 & 0.0415\\
+\addlinespace
+education * wt71 & Contin. & 0.1280 & 0.0056 & 0.0068 & 0.0702 & 0.0627\\
+smokeintensity * smokeyrs & Contin. & -0.0264 & 0.0778 & 0.0101 & -0.0133 & -0.0106\\
+smokeintensity * exercise & Contin. & -0.0726 & 0.0122 & -0.0377 & -0.0246 & -0.0243\\
+smokeintensity * active & Contin. & -0.0209 & 0.0140 & 0.0071 & 0.0155 & 0.0173\\
+smokeintensity * wt71 & Contin. & -0.1437 & 0.0004 & -0.0213 & -0.0766 & -0.0742\\
+\addlinespace
+smokeyrs * exercise & Contin. & 0.1627 & 0.0187 & -0.0047 & 0.0670 & 0.0628\\
+smokeyrs * active & Contin. & 0.1185 & -0.0048 & -0.0164 & 0.0458 & 0.0441\\
+smokeyrs * wt71 & Contin. & 0.1839 & 0.0084 & -0.0144 & 0.0482 & 0.0439\\
+exercise * active & Contin. & 0.0873 & -0.0135 & -0.0207 & 0.0467 & 0.0429\\
+exercise * wt71 & Contin. & 0.1405 & -0.0008 & -0.0105 & 0.0712 & 0.0646\\
+\addlinespace
+active * wt71 & Contin. & 0.1108 & 0.0065 & 0.0037 & 0.0593 & 0.0557\\
+\bottomrule
+\end{tabular}
+\end{table}
+[0;34mr$>[0m sink()

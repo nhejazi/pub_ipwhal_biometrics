@@ -1,0 +1,548 @@
+---
+title: "Experiments with Undersmoothed IPW Estimators"
+author: "[Nima Hejazi](https://nimahejazi.org) and
+  [Mark van der Laan](https://vanderlaan-lab.org/about/)"
+output:
+  pdf_document:
+    toc: true
+    fig_width: 8
+    fig_height: 7
+header_includes:
+  \usepackage{amsmath}
+  \usepackage{mathtools}
+  \usepackage{graphicx}
+  \newcommand{\indep}{\mbox{$\perp\!\!\!\perp$}}
+---
+
+```{r setup, echo=FALSE, message=FALSE}
+library(here)
+library(knitr)
+library(tidyverse)
+library(data.table)
+library(ggsci)
+library(patchwork)
+library(latex2exp)
+pd <- position_dodge(0.2)
+source(here("R", "sim_utils.R"))
+source(here("R", "sim_vis.R"))
+source(here("R", "01_dgp.R"))
+
+summarize_exp <- function(results_file) {
+  results <- readRDS(here("data", results_file))
+  n_samp <- as.numeric(str_remove(names(results), "n"))
+
+  # summarize data for undersmoothed and truncated estimator
+  usm_results <- prepare_sim_summary(results, n_samp, "usm")
+  usm_summary <- summarize_sim_results(usm_results)
+
+  # summarize data for undersmoothed estimator without truncation
+  mintrunc_usm_results <- prepare_sim_summary(results, n_samp, "usm_mintrunc")
+  mintrunc_usm_summary <- summarize_sim_results(mintrunc_usm_results)
+
+  # summarize data for estimator relying on global CV
+  gcv_results <- prepare_sim_summary(results, n_samp, "gcv")
+  gcv_summary <- summarize_sim_results(gcv_results)
+
+  # combine (separately) results and summary information for visualization
+  sim_results <- list(usm = usm_results,
+                      mintrunc = mintrunc_usm_results,
+                      gcv = gcv_results) %>%
+    bind_rows(.id = "est_type") %>%
+    mutate(
+      label = case_when(est_type == "usm" ~ "undersmoothed + truncation",
+                        est_type == "mintrunc" ~ "undersmoothed only",
+                        est_type == "gcv" ~ "global cross-validation")
+    )
+
+  sim_summary <- list(usm = usm_summary,
+                      mintrunc = mintrunc_usm_summary,
+                      gcv = gcv_summary) %>%
+    bind_rows(.id = "est_type") %>%
+    mutate(
+      label = case_when(est_type == "usm" ~ "undersmoothed + truncation",
+                        est_type == "mintrunc" ~ "undersmoothed only",
+                        est_type == "gcv" ~ "global cross-validation")
+    )
+
+  # output for use by downstream functions
+  out <- list(raw_results = results, clean_results = sim_results,
+              summary = sim_summary, n_samp = n_samp)
+  return(out)
+}
+```
+
+# Introduction
+
+This document summarizes the results of experiments conducted in constructing
+an efficient IPW estimator, based on undersmoothing estimates of the propensity
+score $g_n$ via the highly adaptive lasso. Throughout, we report the results
+of experiments that construct several variants of an IPW estimator:
+
+1. Truncation: (1) _minimal_, fixed at $\delta = 0.01$; (2) _profile_, in
+   which the optimal value of the truncation parameter $\delta$ is chosen after
+   a choice of $\lambda$ is determined by minimizing the selection criterion; or
+   (3) _joint_, in which a combination of $\delta$ and $\lambda$ is chosen so as
+   to minimize the selection criterion.
+2. Maximum $L_1$-norm multiplier: fixed at 25 when $Q_0$ is used and 125 when
+   $Q_n$ is estimated via HAL.
+
+# Data-generating mechanism #1a: no positivity issues
+
+```{r dgp1a}
+# get truth and load results data
+sim_truth <- get_truth(n_samp = 1e7, tsm_contrast = 1, dgp_type = "1a")
+psi_true <- sim_truth$true_psi
+eff_bound <- sim_truth$effic_bound
+```
+
+\begin{align*}
+  W_1 &\sim U(0.2, 0.8); W_2 \sim Bern(0.6)\\
+  A &\sim Bern\left(\frac{1}{1 + \exp(2 \cdot W_1 - W_2 - W_1
+    \cdot W_2)}\right)\\
+  Y &= A \cdot (W_1 + W_2 + W_1 * W_2) + (1 - A) \cdot W_1 + \epsilon,
+\end{align*}
+where $\epsilon ~ N(0, 0.1)$. This DGP does not admit issues with positivity,
+as the true propensity score $g_0$ has its minimum at
+`r round(min(sim_truth$g0), 4)`.
+
+## Experiment 1: $Q_0$ + profile minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Profile minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 25
+
+```{r summarize_exp1a-1, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_1a_ipw_ht_Q0_trunc_profile_25Mncv_2019-10-26_17:08:35.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp1a-1, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp1a, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp1a-1, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+## Experiment 2: $Q_0$ + joint minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Joint minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 25
+
+```{r summarize_exp1a-2, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_1a_ipw_ht_Q0_trunc_joint_25Mncv_2019-10-26_22:03:14.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp1a-2, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp1a-2, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp1a-2, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+## Experiment 3: $Q_n$ + profile minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Profile minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 125
+* $Q_n$ fit via HAL
+
+```{r summarize_exp1a-3, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_1a_ipw_ht_Qn_hal_trunc_profile_125Mncv_2019-10-28_22:50:15.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp1a-3, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp1a-3, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp1a-3, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+## Experiment 4: $Q_n$ + joint minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Joint minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 125
+* $Q_n$ fit via HAL
+
+```{r summarize_exp1a-4, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_1a_ipw_ht_Qn_hal_trunc_joint_125Mncv_2019-10-29_03:45:50.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp1a-4, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp1a-4, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp1a-4, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+# Data-generating mechanism #2a: severe positivity issues
+
+```{r dgp2a, echo=FALSE, message=FALSE, warning=FALSE}
+# get truth and load results data
+sim_truth <- get_truth(n_samp = 1e7, tsm_contrast = 1, dgp_type = "2a")
+psi_true <- sim_truth$true_psi
+eff_bound <- sim_truth$effic_bound
+```
+
+\begin{align*}
+  W_1 &\sim U(0, 0.6); W_2 \sim Bern(0.05)\\
+  A &\sim Bern\left(\frac{1}{1 + \exp(2 \cdot W_1 - 5 \cdot W_2 - W_1 \cdot
+    W_2)}\right)\\
+  Y &= A \cdot (W_1 + W_2 + W_1 \cdot W_2) + (1 - A) \cdot W_1 + \epsilon,
+\end{align*}
+where $\epsilon ~ N(0, 0.1)$. This DGP leads directly to issues with
+positivity, as the true propensity score $g_0$ has its minimum at
+`r round(min(sim_truth$g0), 4)`.
+
+## Experiment 1: $Q_0$ + profile minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Profile minimization over $\delta \in \{0.01, 0.02, \ldots, 0.3\}$
+* Maximum L1-norm multiplier: 40
+
+```{r summarize_exp2a-1, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_2a_ipw_ht_Q0_trunc_profile_40Mncv_2019-12-05_19:37:26.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp2a-1, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp2a-1, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp2a-1, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+## Experiment 2: $Q_0$ + joint minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Joint minimization over $\delta \in \{0.01, 0.02, \ldots, 0.3\}$
+* Maximum L1-norm multiplier: 40
+
+```{r summarize_exp2a-2, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_2a_ipw_ht_Q0_trunc_joint_40Mncv_2019-12-05_23:41:51.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp2a-2, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp2a-2, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp2a-2, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+# Data-generating mechanism #2b: moderate positivity issues
+
+```{r dgp2b, echo=FALSE, message=FALSE, warning=FALSE}
+# get truth and load results data
+sim_truth <- get_truth(n_samp = 1e7, tsm_contrast = 1, dgp_type = "2b")
+psi_true <- sim_truth$true_psi
+eff_bound <- sim_truth$effic_bound
+```
+
+\begin{align*}
+  W_1 &\sim U(0, 0.6); W_2 \sim Bern(0.05)\\
+  A &\sim Bern\left(\frac{1}{1 + \exp(2 \cdot W_1 - 5 \cdot W_2 + 3 \cdot
+    W_1 \cdot W_2 - W_1^4}\right)\\
+  Y &= A \cdot (W_1 + W_1 \cdot W_2) + (1 - A) \cdot W_2 + \epsilon,
+\end{align*}
+where $\epsilon ~ N(0, 0.1)$. This DGP leads directly to issues with
+positivity, as the true propensity score $g_0$ has its minimum at
+`r round(min(sim_truth$g0), 4)`.
+
+## Experiment 1: $Q_0$ + profile minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Profile minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 30
+
+```{r summarize_exp2b-1, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_2b_ipw_ht_Q0_trunc_profile_80Mncv_2019-12-10_17:22:28.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp2b-1, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp2b-1, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp2b-1, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+## Experiment 2: $Q_0$ + joint minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Joint minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 30
+
+```{r summarize_exp2b-2, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_2b_ipw_ht_Q0_trunc_joint_80Mncv_2019-12-10_21:35:08.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp2b-2, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp2b-2, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp2b-2, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+# Data-generating mechanism #3: Ashkan's proposal
+
+```{r dgp3a, echo=FALSE, message=FALSE, warning=FALSE}
+# get truth and load results data
+sim_truth <- get_truth(n_samp = 5e6, tsm_contrast = 1, dgp_type = "3a")
+psi_true <- sim_truth$true_psi
+eff_bound <- sim_truth$effic_bound
+```
+
+\begin{align*}
+  W_1 &\sim U(-2, 2); W_2 \sim N(0, 0.5); W_3 \sim Bern(0.5)\\
+  W_4 &\sim Bern(0.5); W_5 \sim U(-1, 1); W_6 \sim Bern(0.5)\\
+  W_7 &\sim Bern(0.5); W_8 \sim Bern(0.5); W_9 \sim U(-1, 1)\\
+  A &\sim Bern\left(\frac{1}{1 + \exp(W_2^2 - \exp(W_1 / 2) - W_1 \cdot
+    W_2)}\right)\\
+  Y &= A -2 \cdot W_2^2 + 2 \cdot W_1 +2 \cdot \frac{1}{n}\sum_{i=1}^n W_2^2
+    + W_2 + W_1 \cdot W_2 + \epsilon,
+\end{align*}
+where $\epsilon ~ N(0, 0.25)$. This DGP does not admit issues with positivity,
+as the true propensity score $g_0$ has its minimum at
+`r round(min(sim_truth$g0), 4)`.
+
+## Experiment 1: $Q_0$ + profile minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Profile minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 25
+
+```{r summarize_exp3a, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_3a_ipw_ht_Q0_trunc_profile_25Mncv_2019-10-28_23:45:53.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp3a, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp3a, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp3a, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```
+
+## Experiment 2: $Q_0$ + joint minimization
+
+* Horvitz-Thompson (nonstabilized) IPW estimator
+* Joint minimization over $\delta \in \{0.01, 0.02, \ldots, 0.2\}$
+* Maximum L1-norm multiplier: 25
+
+```{r summarize_exp3b, echo=FALSE, message=FALSE, warning=FALSE}
+# read in results data and generate cleaned output
+f_res <- "dgp_3a_ipw_ht_Q0_trunc_joint_25Mncv_2019-10-29_05:34:21.rds"
+exp_results <- summarize_exp(f_res)
+
+# examine metrics like L1 norm selected by undersmoothing
+usm_perf_summary <- summarize_usm_results(exp_results$raw_results,
+                                          exp_results$n_samp)
+```
+
+The following table and plots summarize and visualize the performance of the
+estimator variants in terms of standard metrics:
+
+```{r table_exp3b, echo=FALSE, message=FALSE, warning=FALSE}
+kable(exp_results$summary[, -c(1,5)], format = "markdown", digits = 4)
+```
+
+```{r vis_std_exp3b, echo=FALSE, message=FALSE, warning=FALSE}
+sim_results_plotted <- make_sim_plots(exp_results$clean_results,
+                                      exp_results$summary,
+                                      eff_bound)
+sim_results_plotted$nbias / sim_results_plotted$nmse
+```
+
+We now visualize estimator performance using custom metrics for the estimator
+that does allow truncation:
+
+```{r vis_usm_exp3b, echo=FALSE, message=FALSE, warning=FALSE}
+p_usm_perf <- make_usm_plots(usm_perf_summary)
+p_usm_perf$mn + p_usm_perf$mn_ratio + p_usm_perf$gtrunc
+```

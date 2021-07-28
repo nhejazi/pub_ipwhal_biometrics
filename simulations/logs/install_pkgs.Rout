@@ -1,0 +1,501 @@
+
+R version 3.5.1 (2018-07-02) -- "Feather Spray"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+R > if (grepl("savio2", Sys.info()["nodename"])) {
+...   .libPaths("/global/scratch/nhejazi/R")
+...   Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS="true")
+... }
+R > 
+R > # set CRAN mirror
+R > options(repos = structure(c(CRAN = "https://cran.rstudio.com/")))
+R > 
+R > # lie to pkgbuild, as per Jeremy
+R > pkgbuild:::cache_set("has_compiler", TRUE)
+R > 
+R > # from CRAN
+R > install.packages(c("R.utils", "Rcpp", "here", "remotes", "devtools",
+...                    "data.table", "tidyverse", "origami",
+...                    "foreach", "doRNG", "future", "future.apply", "doFuture"),
+...                  lib = "/global/scratch/nhejazi/R")
+trying URL 'https://cran.rstudio.com/src/contrib/R.utils_2.9.2.tar.gz'
+Content type 'application/x-gzip' length 361955 bytes (353 KB)
+==================================================
+downloaded 353 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/Rcpp_1.0.3.tar.gz'
+Content type 'application/x-gzip' length 2749025 bytes (2.6 MB)
+==================================================
+downloaded 2.6 MB
+
+trying URL 'https://cran.rstudio.com/src/contrib/here_0.1.tar.gz'
+Content type 'application/x-gzip' length 3607 bytes
+==================================================
+downloaded 3607 bytes
+
+trying URL 'https://cran.rstudio.com/src/contrib/remotes_2.1.0.tar.gz'
+Content type 'application/x-gzip' length 131622 bytes (128 KB)
+==================================================
+downloaded 128 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/devtools_2.2.1.tar.gz'
+Content type 'application/x-gzip' length 372273 bytes (363 KB)
+==================================================
+downloaded 363 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/data.table_1.12.8.tar.gz'
+Content type 'application/x-gzip' length 4948391 bytes (4.7 MB)
+==================================================
+downloaded 4.7 MB
+
+trying URL 'https://cran.rstudio.com/src/contrib/tidyverse_1.3.0.tar.gz'
+Content type 'application/x-gzip' length 712837 bytes (696 KB)
+==================================================
+downloaded 696 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/origami_1.0.3.tar.gz'
+Content type 'application/x-gzip' length 39256 bytes (38 KB)
+==================================================
+downloaded 38 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/foreach_1.4.7.tar.gz'
+Content type 'application/x-gzip' length 359074 bytes (350 KB)
+==================================================
+downloaded 350 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/doRNG_1.7.1.tar.gz'
+Content type 'application/x-gzip' length 261850 bytes (255 KB)
+==================================================
+downloaded 255 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/future_1.16.0.tar.gz'
+Content type 'application/x-gzip' length 311046 bytes (303 KB)
+==================================================
+downloaded 303 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/future.apply_1.4.0.tar.gz'
+Content type 'application/x-gzip' length 57324 bytes (55 KB)
+==================================================
+downloaded 55 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/doFuture_0.9.0.tar.gz'
+Content type 'application/x-gzip' length 45346 bytes (44 KB)
+==================================================
+downloaded 44 KB
+
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'R.utils' ...
+** package 'R.utils' successfully unpacked and MD5 sums checked
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+Warning in setGenericS3.default(name, export = exportGeneric, envir = envir,  :
+  Renamed the preexisting function warnings to warnings.default, which was defined in environment base.
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (R.utils)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'Rcpp' ...
+** package 'Rcpp' successfully unpacked and MD5 sums checked
+** libs
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I../inst/include/  -I/usr/local/include   -fpic  -g -O2  -c api.cpp -o api.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I../inst/include/  -I/usr/local/include   -fpic  -g -O2  -c attributes.cpp -o attributes.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I../inst/include/  -I/usr/local/include   -fpic  -g -O2  -c barrier.cpp -o barrier.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I../inst/include/  -I/usr/local/include   -fpic  -g -O2  -c date.cpp -o date.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I../inst/include/  -I/usr/local/include   -fpic  -g -O2  -c module.cpp -o module.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I../inst/include/  -I/usr/local/include   -fpic  -g -O2  -c rcpp_init.cpp -o rcpp_init.o
+g++ -shared -L/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/lib -L/usr/local/lib64 -o Rcpp.so api.o attributes.o barrier.o date.o module.o rcpp_init.o -L/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/lib -lR
+installing to /global/scratch/nhejazi/R/Rcpp/libs
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (Rcpp)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'here' ...
+** package 'here' successfully unpacked and MD5 sums checked
+** R
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (here)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+ERROR: failed to lock directory '/global/scratch/nhejazi/R' for modifying
+Try removing '/global/scratch/nhejazi/R/00LOCK-remotes'
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+ERROR: failed to lock directory '/global/scratch/nhejazi/R' for modifying
+Try removing '/global/scratch/nhejazi/R/00LOCK-data.table'
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'tidyverse' ...
+** package 'tidyverse' successfully unpacked and MD5 sums checked
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+*** copying figures
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (tidyverse)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'foreach' ...
+** package 'foreach' successfully unpacked and MD5 sums checked
+** R
+** demo
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (foreach)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'future' ...
+** package 'future' successfully unpacked and MD5 sums checked
+** R
+** demo
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (future)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'devtools' ...
+** package 'devtools' successfully unpacked and MD5 sums checked
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+*** copying figures
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (devtools)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'doRNG' ...
+** package 'doRNG' successfully unpacked and MD5 sums checked
+** R
+** demo
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (doRNG)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'future.apply' ...
+** package 'future.apply' successfully unpacked and MD5 sums checked
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (future.apply)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'doFuture' ...
+** package 'doFuture' successfully unpacked and MD5 sums checked
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (doFuture)
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'origami' ...
+** package 'origami' successfully unpacked and MD5 sums checked
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (origami)
+
+The downloaded source packages are in
+	'/tmp/RtmprOYSMs/downloaded_packages'
+Warning messages:
+1: In install.packages(c("R.utils", "Rcpp", "here", "remotes", "devtools",  :
+  installation of package 'remotes' had non-zero exit status
+2: In install.packages(c("R.utils", "Rcpp", "here", "remotes", "devtools",  :
+  installation of package 'data.table' had non-zero exit status
+R > 
+R > # use remotes to install from GitHub
+R > remotes::install_github("tlverse/hal9001@master",
+...                         lib = "/global/scratch/nhejazi/R")
+Skipping install of 'hal9001' from a github remote, the SHA1 (582d3547) has not changed since last install.
+  Use `force = TRUE` to force installation
+R > 
+R > # install helper package locally
+R > remotes::install_local(here::here("..", "uhalipw"),
+...                        force = TRUE, upgrade = FALSE,
+...                        lib = "/global/scratch/nhejazi/R")
+     During startup - Warning messages:
+   1: Setting LC_CTYPE failed, using "C" 
+   2: Setting LC_COLLATE failed, using "C" 
+   3: Setting LC_TIME failed, using "C" 
+   4: Setting LC_MONETARY failed, using "C" 
+     checking for file '/tmp/RtmprOYSMs/file369c15751e/uhalipw/DESCRIPTION' ...  v  checking for file '/tmp/RtmprOYSMs/file369c15751e/uhalipw/DESCRIPTION'
+  -  preparing 'uhalipw':
+     checking DESCRIPTION meta-information ...  v  checking DESCRIPTION meta-information
+  -  checking for LF line-endings in source and make files and shell scripts
+  -  checking for empty or unneeded directories
+  -  building 'uhalipw_0.0.3.tar.gz'
+     Warning: invalid uid value replaced by that for user 'nobody'
+     
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'uhalipw' ...
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* DONE (uhalipw)
+R > 
+R > # update all packages
+R > update.packages(ask = FALSE, lib.loc = "/global/scratch/nhejazi/R")
+also installing the dependency 'fs'
+
+trying URL 'https://cran.rstudio.com/src/contrib/fs_1.3.1.tar.gz'
+Content type 'application/x-gzip' length 812680 bytes (793 KB)
+==================================================
+downloaded 793 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/data.table_1.12.8.tar.gz'
+Content type 'application/x-gzip' length 4948391 bytes (4.7 MB)
+==================================================
+downloaded 4.7 MB
+
+trying URL 'https://cran.rstudio.com/src/contrib/usethis_1.5.1.tar.gz'
+Content type 'application/x-gzip' length 620225 bytes (605 KB)
+==================================================
+downloaded 605 KB
+
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'fs' ...
+** package 'fs' successfully unpacked and MD5 sums checked
+** libs
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c id.cc -o id.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c utils.cc -o utils.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c file.cc -o file.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c path.cc -o path.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c link.cc -o link.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c fs.cc -o fs.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c dir.cc -o dir.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c error.cc -o error.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c unix/getmode.cc -o unix/getmode.o
+g++  -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -g -O2  -c RcppExports.cpp -o RcppExports.o
+gcc -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -std=gnu99 -c bsd/setmode.c -o bsd/setmode.o
+gcc -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -std=gnu99 -c bsd/strmode.c -o bsd/strmode.o
+gcc -I"/global/home/groups/consultsw/sl-7.x86_64/modules/r/3.5.1/lib64/R/include" -DNDEBUG -I./libuv/include -I. -pthread -I"/global/scratch/nhejazi/R/Rcpp/include" -I/usr/local/include   -fpic  -std=gnu99 -c bsd/reallocarray.c -o bsd/reallocarray.o
+cp -p -f libuv/m4/lt_obsolete.m4 libuv/m4/lt~obsolete.m4
+(cd libuv \
+	&& touch aclocal.m4 \
+	&& touch -r aclocal.m4 configure Makefile.in \
+&& CC="gcc" CFLAGS="-std=gnu99 -fpic -fvisibility=hidden" AR="ar" RANLIB="ranlib" LDFLAGS="-L/usr/local/lib64" ./configure --quiet)
+mkdir: cannot create directory '~/rtmp/cg15084-14819': No such file or directory
+mkdir: cannot create directory '~/rtmp/cg-15084': No such file or directory
+config.guess: cannot create a temporary directory in ~/rtmp
+configure: error: cannot guess build type; you must specify one
+make: *** [libuv/Makefile] Error 1
+ERROR: compilation failed for package 'fs'
+* removing '/global/scratch/nhejazi/R/fs'
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+ERROR: failed to lock directory '/global/scratch/nhejazi/R' for modifying
+Try removing '/global/scratch/nhejazi/R/00LOCK-data.table'
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+* installing *source* package 'usethis' ...
+** package 'usethis' successfully unpacked and MD5 sums checked
+** R
+** inst
+** byte-compile and prepare package for lazy loading
+Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) : 
+  namespace 'fs' 1.2.6 is being loaded, but >= 1.3.0 is required
+ERROR: lazy loading failed for package 'usethis'
+* removing '/global/scratch/nhejazi/R/usethis'
+* restoring previous '/global/scratch/nhejazi/R/usethis'
+
+The downloaded source packages are in
+	'/tmp/RtmprOYSMs/downloaded_packages'
+Warning messages:
+1: In install.packages(update[instlib == l, "Package"], l, contriburl = contriburl,  :
+  installation of package 'fs' had non-zero exit status
+2: In install.packages(update[instlib == l, "Package"], l, contriburl = contriburl,  :
+  installation of package 'data.table' had non-zero exit status
+3: In install.packages(update[instlib == l, "Package"], l, contriburl = contriburl,  :
+  installation of package 'usethis' had non-zero exit status
+R > 
+> proc.time()
+   user  system elapsed 
+ 97.745  14.473 182.319 

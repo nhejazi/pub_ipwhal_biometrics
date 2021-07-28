@@ -1,0 +1,347 @@
+
+R version 3.5.1 (2018-07-02) -- "Feather Spray"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+During startup - Warning messages:
+1: Setting LC_CTYPE failed, using "C" 
+2: Setting LC_COLLATE failed, using "C" 
+3: Setting LC_TIME failed, using "C" 
+4: Setting LC_MONETARY failed, using "C" 
+R > # COMMAND LINE ARGUMENTS
+R > # 1) dgp: which DGP to use for experiment (see file 01_dgp.R for details)
+R > # 2) Mncv_max: multiple of the L1 norm up to which the sequence ought to go
+R > # 3) ipw: "ht" for Horvitz-Thompson (classical) or "hajek" for stabilized
+R > # 4) Q_reg: "Q0" for using the true outcome mechanism from the selected DGP,
+R > #           "Qn_hal" for using an estimated outcome mechanism based on HAL, or
+R > #           "Qn_iden" for ignoring the outcome mechanism and using just 1's
+R > # 5) g_trunc: "profile" for sequential minimization over {lambda, delta} or
+R > #             "joint" for joint minimization over {lambda, delta}
+R > 
+R > # use custom package library on Savio cluster
+R > if (grepl("savio2", Sys.info()["nodename"])) {
+...   .libPaths("/global/scratch/nhejazi/R")
+...   Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS="true")
+... }
+R > 
+R > # read in command line arguments
+R > args <- R.utils::commandArgs(trailingOnly = TRUE, asValues = TRUE,
+...                              defaults = list(dgp = "1a",
+...                                              Mncv_max = 25,
+...                                              trunc_max = 0.2,
+...                                              trunc_len = 10,
+...                                              ipw = "ht",
+...                                              Q_reg = "Q0",
+...                                              g_trunc = "profile"))
+R > 
+R > # reference for logging
+R > print(args)
+$dgp
+[1] "3a"
+
+$Mncv_max
+[1] 75
+
+$trunc_max
+[1] 0.3
+
+$trunc_len
+[1] 4
+
+$ipw
+[1] "ht"
+
+$Q_reg
+[1] "Q0"
+
+$g_trunc
+[1] "joint"
+
+R > 
+R > # packages, housekeeping
+R > library(here)
+here() starts at /global/home/users/nhejazi/ipwhal-meta/simulations
+R > library(data.table)
+R > library(tidyverse)
+-- Attaching packages --------------------------------------- tidyverse 1.3.0 --
+v ggplot2 3.2.1     v purrr   0.3.3
+v tibble  2.1.3     v dplyr   0.8.3
+v tidyr   1.0.0     v stringr 1.4.0
+v readr   1.3.1     v forcats 0.4.0
+-- Conflicts ------------------------------------------ tidyverse_conflicts() --
+x dplyr::between()   masks data.table::between()
+x dplyr::filter()    masks stats::filter()
+x dplyr::first()     masks data.table::first()
+x dplyr::lag()       masks stats::lag()
+x dplyr::last()      masks data.table::last()
+x purrr::transpose() masks data.table::transpose()
+R > library(origami)
+origami: Generalized Cross-Validation Framework
+Version: 1.0.2
+R > library(hal9001)
+Loading required package: Rcpp
+hal9001 v0.2.5: The Scalable Highly Adaptive Lasso
+R > library(foreach)
+
+Attaching package: 'foreach'
+
+The following objects are masked from 'package:purrr':
+
+    accumulate, when
+
+R > library(future)
+R > library(doFuture)
+Loading required package: globals
+Loading required package: iterators
+Loading required package: parallel
+R > library(doRNG)
+Loading required package: rngtools
+Loading required package: pkgmaker
+Loading required package: registry
+
+Attaching package: 'pkgmaker'
+
+The following object is masked from 'package:base':
+
+    isFALSE
+
+R > 
+R > # load helper package and scripts
+R > source(here("R", "01_dgp.R"))
+R > devtools::load_all(here("..", "uhalipw"))
+Loading uhalipw
+
+Attaching package: 'testthat'
+
+The following object is masked from 'package:dplyr':
+
+    matches
+
+The following object is masked from 'package:purrr':
+
+    is_null
+
+The following object is masked from 'package:tidyr':
+
+    matches
+
+R > 
+R > # parallelization
+R > options(future.globals.maxSize = 1e24)
+R > registerDoFuture()
+R > plan(multiprocess, workers = 24)
+R > set.seed(72439)
+R > 
+R > # fixed simulation parameters (not passed in via command line args)
+R > n_iter <- 500
+R > v_folds <- 5
+R > tsm_contrast <- 1                                # estimating Q(1,W) or Q(0,W)
+R > n_samp <- cumsum(rep(sqrt(100), 4))^2            # sample sizes at root-n scale
+R > lambda_seq <- exp(seq(-0.5, -20, length = 1e4))
+R > gtrunc_seq <- seq(0.01, args$trunc_max, length.out = args$trunc_len)
+R > 
+R > # truth for data-generating process
+R > sim_truth <- get_truth(n_samp = 1e7, tsm_contrast = tsm_contrast,
+...                        dgp = args$dgp)
+R > 
+R > # loop over sample sizes
+R > sim_over_nsamp <- lapply(n_samp, function(n_obs) {
+...   # parallelized loop for number of simulations
+...   sim_iter <- foreach(this_iter = seq_len(n_iter),
+...                       .options.multicore = list(preschedule = FALSE),
+...                       .errorhandling = "remove") %dorng% {
+...     ## 0) generate data for this simulation
+...     dgp <- make_simple_data(n_obs, dgp = args$dgp)
+...     data_o <- dgp$data_obs
+...     folds <- make_folds(data_o, V = v_folds)
+...     folds_by_ids <- folds2foldvec(folds)
+...     names_w <- str_subset(colnames(data_o), "W")
+...     names_noty <- colnames(data_o)[!str_detect(colnames(data_o), "Y")]
+... 
+...     ### also, compute true g_0 and Q_0 from structural equations
+...     g0 <- with(data_o, dgp$dgp_funs$g0(W1 = W1, W2 = W2))
+...     Q0 <- with(data_o, dgp$dgp_funs$Q0(A = tsm_contrast, W1 = W1, W2 = W2))
+... 
+...     ## 1) first, run CV-HAL to get CV-estimate of L1 norm and sequence
+...     gn_cv_hal_fit <- fit_hal(X = as.matrix(data_o[, ..names_w]), Y = data_o$A,
+...                              max_degree = NULL, fit_type = "glmnet",
+...                              foldid = folds_by_ids, family = "binomial",
+...                              standardize = FALSE, yolo = FALSE)
+...     gn_cv_pred <- predict(gn_cv_hal_fit, new_data = data_o)
+...     L1_cv <- sum(abs(gn_cv_hal_fit$coef))
+...     lambda_cv <- gn_cv_hal_fit$lambda_star
+...     L1_seq <- seq(L1_cv, args$Mncv_max * L1_cv, length.out = 1000)
+...     #L1_seq <- seq(L1_cv, args$Mncv_max * L1_cv,
+...                   #by = case_when(args$Mncv_max < 30 ~ 0.02,
+...                                  #between(args$Mncv_max, 30, 50) ~ 0.2,
+...                                  #args$Mncv_max > 50 ~ 1))
+... 
+...     ## 2) run under-smoothed HAL for the sequence of L1 norms
+...     ## NOTE: something really odd happens here (at least in some cases), where
+...     #        the first predicted set of propensity scores (w/ L1 norm matching
+...     #        matching that from global CV) does not match gn_cv_pred well?!
+...     gn_ipw_hal <- fit_gn_ipw(data_in = data_o, folds = folds,
+...                              x_names = names_w, y_names = "A",
+...                              L1_seq = L1_seq, lambda_seq = lambda_seq)
+... 
+...     ## 3) need Q_n --- but this doesn't need to be under-smoothed
+...     ##    ...or use truth based on the data-generating mechanism
+...     Qn_cv_hal_fit <- fit_hal(X = as.matrix(data_o[, ..names_noty]),
+...                              Y = data_o$Y,
+...                              max_degree = NULL, fit_type = "glmnet",
+...                              foldid = folds_by_ids, family = "gaussian",
+...                              standardize = FALSE, yolo = FALSE)
+...     data_tsm <- copy(data_o)[, A := tsm_contrast]
+...     Qn_cv_tsm <- predict(Qn_cv_hal_fit,
+...                          new_data = as.matrix(data_tsm[, ..names_noty]))
+... 
+...     ## 4) before building IPW, set what to use for Q in the IPW estimator
+...     if (args$Q_reg == "Qn_hal") {
+...       Qtsm_in <- Qn_cv_tsm
+...     } else if (args$Q_reg == "Q0") {
+...       Qtsm_in <- Q0
+...     } else if (args$Q_reg == "Qn_iden") {
+...       Qtsm_in <- rep(1, length(Qn_cv_tsm))    # doesn't work at all
+...     }
+... 
+...     ## 5) build IPW estimator and compute variance based on influence function
+...     ipw_gtrunc <- lapply(gtrunc_seq, function(gtrunc) {
+...       ipw <- build_ipw(gn_uhal = gn_ipw_hal$gn_cv,
+...                        a = data_o$A, y = data_o$Y,
+...                        Qn_tsm = Qtsm_in,
+...                        #gn_dcar = gn_cv_pred,
+...                        bound_gn = gtrunc,
+...                        est_type = args$ipw)
+...       return(ipw)
+...     }) %>%
+...     set_names(paste0("g_delta_", gtrunc_seq))
+... 
+...     ### clean up potentially large HAL model
+...   rm(gn_ipw_hal); gc()
+... 
+...     ### to compare, compute IPW and IC for undersmoothed gn without truncation
+...     ipw_gnusm_mintrunc <- ipw_gtrunc[[1]]
+... 
+...     ### for reference, also compute IPW and IC for gn selected by global CV
+...     ipw_gncv <- build_ipw(gn_uhal = as.matrix(gn_cv_pred),
+...                           a = data_o$A, y = data_o$Y,
+...                           Qn_tsm = Qtsm_in,
+...                           est_type = args$ipw)
+... 
+...     ## 6) select IPW estimator and gn as minimizer of given criterion
+...     dcar_emp_gtrunc <- sapply(ipw_gtrunc, function(ipw) {
+...       dcar_emp <- apply(ipw$dcar, 2, function(dcar) abs(mean(dcar)))
+...       return(dcar_emp)
+...     })
+...     ## method to choose optimal {delta, lambda} combination
+...     if (args$g_trunc == "profile") {
+...       ### choose optimal undersmoothing lambda based on no truncation, then
+...       ### subsequently choose a possible delta that minimizes still further
+...       opt_lambda <- opt_lambda_mintrunc <- which.min(dcar_emp_gtrunc[, 1])
+...       opt_gtrunc <- which.min(dcar_emp_gtrunc[opt_lambda, ])
+...     } else if (args$g_trunc == "joint") {
+...       ### choose optimal undersmoothing lambda and possible truncation delta
+...       ### based on joint minimization to catch any interaction between these
+...       dcar_emp_minidx <- arrayInd(which.min(dcar_emp_gtrunc),
+...                                   dim(dcar_emp_gtrunc))
+...       opt_lambda <- dcar_emp_minidx[1]
+...       opt_gtrunc <- dcar_emp_minidx[2]
+...       opt_lambda_mintrunc <- which.min(dcar_emp_gtrunc[, 1])
+...     }
+...     dcar_emp <- dcar_emp_gtrunc[opt_lambda, opt_gtrunc]
+...     ipw <- ipw_gtrunc[[opt_gtrunc]]
+... 
+...     ### compute variance of D_star or D_{CAR} and criterion for sufficiency
+...     ### N.B., instead of IF variance, could simply use the efficiency bound
+...     dstar_var <- apply((ipw$ic - ipw$dcar), 2, function(dstar) var(dstar))
+...     dvar_est <- unname(sqrt(dstar_var / n_obs))[opt_lambda]
+...     dvar_eff <- sqrt(sim_truth$effic_bound / n_obs)
+...     dcrit <- dcar_emp / dvar_eff
+... 
+...     ### get IPW estimate that minimizes criterion for D_{CAR}
+...     psi_ipw <- ipw$psi[opt_lambda]
+...     ic_ipw <- ipw$ic[, opt_lambda]
+...     var_ic_ipw <- var(ic_ipw) / n_obs
+...     gn_ipw <- ipw$gn[, opt_lambda]
+... 
+...     ### also, select same values under no truncation
+...     psi_ipw_mintrunc <- ipw_gnusm_mintrunc$psi[opt_lambda_mintrunc]
+...     ic_ipw_mintrunc <- ipw_gnusm_mintrunc$ic[, opt_lambda_mintrunc]
+...     var_ic_ipw_mintrunc <- var(ic_ipw_mintrunc) / n_obs
+...     gn_ipw_mintrunc <- ipw_gnusm_mintrunc$gn[, opt_lambda_mintrunc]
+... 
+...     ### find regularization parameter and L1 norm selected by undersmoothing
+...     lambda_mapped <- 
+...       lambda_seq[as.numeric(str_remove(colnames(ipw$dcar), "s"))]
+...     lambda_selected <- lambda_mapped[opt_lambda]
+...     Mn_selected <- L1_seq[opt_lambda]
+...     gtrunc_selected <- gtrunc_seq[opt_gtrunc]
+... 
+...     ## 7) construct output for single iteration
+...     sim_out <- list(# first, undersmoothed and truncated estimator
+...                     psi_usm = psi_ipw,
+...                     var_usm = var_ic_ipw,
+...                     ic_usm = ic_ipw,
+...                     gn_usm = gn_ipw,
+...                     Mn_usm = Mn_selected,
+...                     lambda_usm = lambda_selected,
+...                     gtrunc_usm = gtrunc_selected,
+...                     dcar = dcar_emp,
+...                     dcrit = dcrit,
+...                     # next, undersmoothed estimator w/ minimal truncation
+...                     psi_usm_mintrunc = psi_ipw_mintrunc,
+...                     var_usm_mintrunc = var_ic_ipw_mintrunc,
+...                     ic_usm_mintrunc = ic_ipw_mintrunc,
+...                     gn_usm_mintrunc = gn_ipw_mintrunc,
+...                     # last, estimator selected by global CV
+...                     psi_cv = ipw_gncv$psi,
+...                     var_cv = ipw_gncv$var_ic,
+...                     ic_cv = as.numeric(ipw_gncv$ic),
+...                     gn_cv = as.numeric(ipw_gncv$gn),
+...                     Mn_cv = L1_cv,
+...                     lambda_cv = lambda_cv
+...                    )
+...     return(sim_out)
+...   }
+... 
+...   # re-organize output into separate frames
+...   out <- list(# first, undersmoothed, truncated estimator
+...               psi_usm = sapply(sim_iter, `[[`, "psi_usm"),
+...               var_usm = sapply(sim_iter, `[[`, "var_usm"),
+...               ic_usm = sapply(sim_iter, `[[`, "ic_usm"),
+...               gn_usm = sapply(sim_iter, `[[`, "gn_usm"),
+...               Mn_usm = sapply(sim_iter, `[[`, "Mn_usm"),
+...               lambda_usm = sapply(sim_iter, `[[`, "lambda_usm"),
+...               gtrunc_usm = sapply(sim_iter, `[[`, "gtrunc_usm"),
+...               dcar_usm = sapply(sim_iter, `[[`, "dcar"),
+...               dcrit_usm = sapply(sim_iter, `[[`, "dcrit"),
+...               # next, undersmoothed estimator w/ minimal truncation
+...               psi_usm_mintrunc = sapply(sim_iter, `[[`, "psi_usm_mintrunc"),
+...               var_usm_mintrunc = sapply(sim_iter, `[[`, "var_usm_mintrunc"),
+...               ic_usm_mintrunc = sapply(sim_iter, `[[`, "ic_usm_mintrunc"),
+...               gn_usm_mintrunc = sapply(sim_iter, `[[`, "gn_usm_mintrunc"),
+...               # last, estimator selected by global CV
+...               psi_gcv = sapply(sim_iter, `[[`, "psi_cv"),
+...               var_gcv = sapply(sim_iter, `[[`, "var_cv"),
+...               ic_gcv = sapply(sim_iter, `[[`, "ic_cv"),
+...               gn_gcv = sapply(sim_iter, `[[`, "gn_cv"),
+...               Mn_gcv = sapply(sim_iter, `[[`, "Mn_cv"),
+...               lambda_gcv = sapply(sim_iter, `[[`, "lambda_cv")
+...              )
+...   return(out)
+... })
+Error: Failed to retrieve the result of MulticoreFuture (<none>) from the forked worker (on localhost; PID 9552). Post-mortem diagnostic: No process exists with this PID, i.e. the forked localhost worker is no longer alive.
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Execution halted

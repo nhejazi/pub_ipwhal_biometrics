@@ -1,0 +1,39 @@
+Package: uhalipw
+Title: Nonparametric IPW Estimation via the Undersmoothed Highly Adaptive Lasso
+Version: 0.0.3
+Authors@R: c(
+    person(given = "Nima",
+           family = "Hejazi",
+           role = c("aut", "cre", "cph"),
+           email = "nh@nimahejazi.org",
+           comment = c(ORCID = "0000-0002-7127-2789")),
+    person(given = "Mark",
+           family = "van der Laan",
+           role = c("aut", "ths"),
+           email = "laan@berkeley.edu",
+           comment = c(ORCID = "0000-0003-1432-5511"))
+  )
+Maintainer: Nima Hejazi <nh@nimahejazi.org>
+Description: Construction of nonparametric-efficient inverse probability
+    weighted estimators based on estimation of the propensity score via
+    undersmoothing over a sequence of regression models based on the highly
+    adaptive lasso.
+Depends: R (>= 3.2.0)
+Imports:
+    stats,
+    data.table,
+    assertthat,
+    hal9001 (>= 0.2.5),
+    origami (>= 1.0.0)
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    future,
+    stringr
+Remotes:
+    github::tlverse/hal9001@master
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.0.2

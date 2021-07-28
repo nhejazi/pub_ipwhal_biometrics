@@ -1,0 +1,7 @@
+.RData
+.Rhistory
+.html
+.ipynb_checkpoints
+notebooks/*.pdf
+notebooks/*.html
+notebooks/*.ipynb_checkpoints
