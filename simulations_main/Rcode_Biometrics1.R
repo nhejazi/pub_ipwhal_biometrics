@@ -1,11 +1,6 @@
-
-# THIS CODE PLOTS HAL IPW FOR DIFFERENT LAMBDAS
-
-
 #====================================================#
 #=== step 1:  the main code =========================#
 #====================================================#
-#This code very ggood results for n=200.  
 ##remove.packages("hal9001")
 #devtools::install_github("tlverse/hal9001", build_vignettes = FALSE)
 library(hal9001)
@@ -25,7 +20,6 @@ library(hal9001)
 ### ps = 7, Observational study with 10 covariates Section S3.5
 
 dat_hal <- function(n, ps){
-  
   if(ps == 1){### randomized trial
     x1 = runif(n,0.2,0.8)
     x2 = rbinom(n,1,0.3)
@@ -33,28 +27,28 @@ dat_hal <- function(n, ps){
     A = rbinom(n, size = 1, prob = p)
     Y = A*(x1+x2+x1*x2)+(1-A)*x1 + rnorm(n, mean = 0, sd = 0.1)
   }
-  if(ps == 2){### 
+  if(ps == 2){###
     x1 = runif(n,0.2,0.8)
     x2 = rbinom(n,1,0.6)
     p = exp(2*x1-x2-x1*x2) / (1 + exp(2*x1-x2-x1*x2)) ; summary(p)
     A = rbinom(n, size = 1, prob = p)
     Y = A*(x1+x2+x1*x2)+(1-A)*x1 + rnorm(n, mean = 0, sd = 0.1)
   }
-  if(ps == 3){### 
+  if(ps == 3){###
     x1 = runif(n,0.0,0.6)
     x2 = rbinom(n,1,0.05)
     p = exp(2*x1-4*x2+x1*x2) / (1 + exp(2*x1-4*x2+x1*x2)) ; summary(p)
     A = rbinom(n, size = 1, prob = p)
     Y = A*(x1+x2)+(1-A)*x1 + rnorm(n, mean = 0, sd = 0.1)
   }
-  if(ps == 4){### 
+  if(ps == 4){###
     x1 = runif(n,-2,2)
     x2 = rnorm(n,0,0.5)
     p = exp((1*x2^2-exp(x1/2)-0*x1*x2)/2) / (1 + exp((1*x2^2-exp(x1/2)-0*x1*x2)/2)) ; summary(p)
     A = rbinom(n, size = 1, prob = p)
     Y = +0*A +(-2*x2^2+2*x1+2*mean(x2^2)+x2+x1*x2)/1 + rnorm(n, mean = 0, sd = 0.1)
   }
-  if(ps == 5){### 
+  if(ps == 5){###
     x1 = runif(n,-2,2)
     x2 = rnorm(n,0,0.5)
     p = exp((1.5*x2-x1)/2) / (1 + exp((1.5*x2-x1)/2)) ; summary(p)
@@ -384,7 +378,4 @@ results.list <- foreach(k =1:length(sim.1), .packages = c("hal9001","MASS","sand
 
 stopCluster(cl)
 round(apply(do.call(rbind,results.list),2,function(x) mean(x,na.rm=TRUE)),3)
-
-
-
 
