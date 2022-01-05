@@ -13,7 +13,7 @@ conflict_prefer("filter", "dplyr")
 
 # load and clean results
 ipw_nhefs_out <- readRDS(here("data", "nhefs_ipw_results.rds"))
-ipw_nhefs_results <- ipw_nhefs_out$results %>%
+ipw_nhefs_results <- ipw_nhefs_out$ipw_results %>%
   filter(
     qsmk == "ate",
     gn_estim %in% c("hal_trunc", "hal_mintrunc", "hal_gcv",
@@ -73,9 +73,6 @@ ipw_nhefs_results %>%
   print()
 sink()
 
-# balance table results from Ashkan's HAL fits
-#ipw_nhefs_balance <- readRDS(here("data", "nhefs_balance_ashkan.rds"))
-
 # create balance table
 sink(here("tables", "ipw_baltab_nhefs.tex"))
 ipw_nhefs_baltab <- ipw_nhefs_out$balance$Balance %>%
@@ -91,6 +88,51 @@ ipw_nhefs_baltab <- ipw_nhefs_out$balance$Balance %>%
   kable_styling() %>%
   print()
 sink()
+
+# create plot of propensity score overlap for HAL vs. GLM-based IPW estimators
+ipw_nhefs_pscore <- ipw_nhefs_out$nhefs_results %>%
+  select(qsmk, starts_with("ipw")) %>%
+  select(-ipw_hal_trunc, -ipw_unadj) %>%
+  pivot_longer(
+    cols = starts_with("ipw"),
+    names_to = "pscore_est",
+    values_to = "ip_weights"
+  ) %>%
+  mutate(
+    pscore_est = str_remove(pscore_est, "ipw_"),
+    pscore_est = case_when(
+      pscore_est == "unadj" ~ "GLM (unadjusted)",
+      pscore_est == "mainterms" ~ "GLM (main terms)",
+      pscore_est == "robins" ~ "GLM (w/ quad. terms)",
+      pscore_est == "hal_gcv" ~ "HAL (global CV)",
+      pscore_est == "hal_mintrunc" ~ "HAL (undersm., min. trunc.)",
+      pscore_est == "hal_trunc" ~ "HAL (undersm., trunc.)"
+    ),
+    qsmk = case_when(
+      qsmk == 0 ~ "Did not quit smoking",
+      qsmk == 1 ~ "Quit smoking"
+    )
+  )
+p_ipw_overlap <- ipw_nhefs_pscore %>%
+  ggplot(aes(x = ip_weights)) +
+  geom_histogram(fill = "blue", color = "white", alpha = 0.5) +
+  xlim(1, 10) +
+  theme_bw() +
+  theme(
+    text = element_text(size = 28),
+    axis.text.x = element_text(colour = "black", size = 20),
+    axis.text.y = element_text(colour = "black", size = 20)
+  ) +
+  labs(
+    x = "Estimated IP Weight",
+    y = "",
+    title = "Overlap of Empirical Distributions of Estimated IP Weights",
+    subtitle = "(across propensity score estimator and treatment condition)"
+  ) +
+  facet_grid(qsmk ~ pscore_est, scales = "free_y")
+ggsave(filename = here("graphs", "ipw_overlap_nhefs.pdf"),
+       plot = p_ipw_overlap, width = 22, height = 18)
+
 
 # create plots of HAL-IPW solution path in lambda
 l1_cv <- ipw_nhefs_out$path_plot$l1_norm[1]

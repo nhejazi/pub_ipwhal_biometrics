@@ -1,24 +1,15 @@
-if (grepl("savio2", Sys.info()["nodename"])) {
-  .libPaths("/global/scratch/nhejazi/R")
-  Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS="true")
-}
-
 # set virtual environment and load packages
+Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS="true")
 renv::activate(project = here::here())
 library(here)
-library(tidyverse)
-library(data.table)
 library(origami)
 library(hal9001)
 library(cobalt)
+library(tidyverse)
+library(data.table)
 devtools::load_all(here("..", "uhalipw"))
 source(here("..", "simulations", "R", "selectors.R"))
 set.seed(281681)
-
-# load results from Ashkan
-#load(here("data", "nhefs_ipwhal_ashkan.rda"))
-#ps_hal_gcv <- dat$preds.hal.CV
-#ps_hal_dcar <- dat$preds.hal.DCAR
 
 # constants used throughout analysis
 v_folds <- 5
@@ -34,7 +25,7 @@ nhefs_nmv <- nhefs[which(!is.na(nhefs$wt82)), ]
 
 ###############################################################################
 # Estimation of IP weights via logistic regression
-# NOTE: code for this analysis was adapted from Hernan & Robins (2020)
+# NOTE: code for this analysis was adapted from Hernan & Robins (2020+)
 ###############################################################################
 ## 0) fit the unadjusted logistic regression model of smoking cessation
 ip_unadj <- glm(qsmk ~ 1, family = binomial(), data = nhefs_nmv)
@@ -266,9 +257,9 @@ ipw_gcv_summary <- list(
 ## add HAL-based IP weights to NHEFS data
 nhefs_nmv <- nhefs_nmv %>%
   mutate(
-    ps1_hal_gcv = as.numeric(ipw_gcv_tx$gn), #dat$preds.hal.CV,
+    ps1_hal_gcv = as.numeric(ipw_gcv_tx$gn),
     ps0_hal_gcv = 1 - ps1_hal_gcv,
-    ps1_hal_mintrunc = as.numeric(tx_est_mintrunc$gn), #dat$preds.hal.DCAR,
+    ps1_hal_mintrunc = as.numeric(tx_est_mintrunc$gn),
     ps0_hal_mintrunc = 1 - ps1_hal_mintrunc,
     ps1_hal_trunc = as.numeric(tx_est_trunc$gn),
     ps0_hal_trunc = 1 - ps1_hal_trunc,
@@ -318,6 +309,8 @@ ipw_results <- list(hal_trunc = ipw_hal_trunc_summary,
   arrange(qsmk)
 
 ## 10) create output list and save results object
-nhefs_out <- list(results = ipw_results, balance = ipw_balance_table,
+nhefs_out <- list(nhefs_results = nhefs_nmv,
+                  ipw_results = ipw_results,
+                  balance = ipw_balance_table,
                   path_plot = ipw_ate_path_plot_data)
 saveRDS(nhefs_out, here("data", "nhefs_ipw_results.rds"))
