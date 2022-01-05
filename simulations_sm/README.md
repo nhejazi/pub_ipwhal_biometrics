@@ -10,6 +10,9 @@ in the `R/` directory, in particular
 * Performance against doubly robust estimators and in settings with many
   covariates is evaluated in `Rcode_Biometrics1.R`, `Rcode_Biometrics2.R`, and
   `Rcode_Biometrics3.R`.
+  * `Rcode_Biometrics1.R`:
+  * `Rcode_Biometrics2.R`:
+  * `Rcode_Biometrics3.R`:
 * Performance in RCTs and the two observational study settings is evaluated in
    all other scripts in the `R/` directory; the numbered scripts must be run
    sequentially, and all other scripts contain either helper functions or code
