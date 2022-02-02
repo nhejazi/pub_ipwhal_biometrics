@@ -204,7 +204,7 @@ make_ipw_summary <- function(results_file, tsm_contrast = 1, selector) {
                colour = "black") +
     labs(
       x = "",
-      y = TeX("$n \\times$ ($(\\psi - \\hat{\\psi})^2 + \\hat{\\sigma^2})$"),
+      y = TeX("$n \\times$ $(\\psi - \\hat{\\psi})^2 + \\hat{\\sigma^2}$"),
       title = "Scaled mean squared error"
     ) +
     theme_bw() +
@@ -259,13 +259,12 @@ make_ipw_summary <- function(results_file, tsm_contrast = 1, selector) {
 }
 
 ## results across all selectors
-results_files <-
-  c(#"dgp_1a_ipw_ht_Qn_hal_trunc_joint_140Mncv_2020-02-13_08:31:48.rds",
-    "dgp_1a_ipw_ht_Qn_hal_trunc_profile_80Mncv_2020-02-13_03:36:43.rds",
-    "dgp_1b_ipw_ht_Qn_hal_trunc_joint_350Mncv_2020-02-13_10:34:52.rds",
-    #"dgp_1b_ipw_ht_Qn_hal_trunc_profile_350Mncv_2020-02-13_04:39:17.rds",
-    #"dgp_2a_ipw_ht_Qn_hal_trunc_joint_80Mncv_2020-03-08_03:35:32.rds",
-    "dgp_2a_ipw_ht_Qn_hal_trunc_profile_80Mncv_2020-03-07_21:49:10.rds")
+results_files <- c(
+    "dgp_1a_ipw_ht_Qn_hal_trunc_profile_80Mncv_2020-02-13.rds",
+    "dgp_1b_ipw_ht_Qn_hal_trunc_joint_350Mncv_2020-02-13.rds",
+    "dgp_2a_ipw_ht_Qn_hal_trunc_profile_80Mncv_2020-03-07.rds",
+    "dgp_2b_ipw_ht_Qn_hal_trunc_joint_120Mncv_2020-03-08.rds"
+  )
 
 # run summarization and save plots
 lapply(results_files, function(f_results) {
