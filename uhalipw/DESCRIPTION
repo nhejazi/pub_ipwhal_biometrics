@@ -23,7 +23,7 @@ Imports:
     stats,
     data.table,
     assertthat,
-    hal9001 (>= 0.2.5),
+    hal9001 (== 0.2.5),
     origami (>= 1.0.0)
 Suggests:
     testthat,
@@ -32,7 +32,7 @@ Suggests:
     future,
     stringr
 Remotes:
-    github::tlverse/hal9001@master
+    github::tlverse/hal9001@v0.2.5
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

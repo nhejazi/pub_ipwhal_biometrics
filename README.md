@@ -1,7 +1,7 @@
 Code to reproduce the results reported in ["Nonparametric inverse probability
 weighted estimators based on the highly adaptive
 lasso"](https://arxiv.org/abs/2005.11303), A. Ertefaie, N.S. Hejazi,
-M.J. van der Laan, _Biometrics_ (2021+).
+M.J. van der Laan, _Biometrics_ (2022).
 
 * To reproduce the simulation study reported in the manuscript, examine the R
   script in the `simulations_main` directory.
